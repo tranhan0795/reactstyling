@@ -1,28 +1,32 @@
 
 import React from 'react'
-
+import { ThemeContext } from './ThemeContext';
 
 function Newsletter() {
   const [email, setEmail] = React.useState<string>('')
-
+  const [emailFocused, setEmailFocused] = React.useState<boolean>(false);
+  const { width } = useWindowDimensions();
+  const emailPartsCount = countEmailParts(email)
+  const { theme } = React.useContext(ThemeContext);
 
   return (
-    <section style={styles.container()}>
+    <section style={styles.container(width)}>
       <div style={styles.spectrum()} aria-hidden>
         {Array.from(Array(5)).map((_, i) => (
-          <div style={styles.bar({ i })} key={i}></div>
+          <div style={styles.bar({ active: i + 1 <= emailPartsCount, i })} key={i}></div>
         ))}
       </div>
-      <header style={styles.header()}>
+      <header style={styles.header({ theme })}>
         <h2 style={styles.headerH2()}>Get the newsletter</h2>
       </header>
       <input
-        style={styles.email()}
+        style={styles.email({ focused: emailFocused })}
         type="email"
         placeholder="Your email"
         value={email}
         onChange={(evt) => setEmail(evt.target.value)}
-
+        onFocus={() => setEmailFocused(true)}
+        onBlur={() => setEmailFocused(false)}
       />
       <button style={styles.submit()}>Sign up</button>
     </section>
@@ -41,10 +45,10 @@ const color = [
 
 
 const styles = {
-  container: (): React.CSSProperties => ({
+  container: (width: number): React.CSSProperties => ({
     position: 'relative',
-    maxWidth: '100%',
-    fontSize:  '1.25em',
+    maxWidth: width >= 800 ? '700' : '100%',
+    fontSize: width >= 800 ? '2em' : '1.25em',
     padding: '1em 1em 2em 1em',
     background: '#2b283d',
   })
@@ -59,14 +63,14 @@ const styles = {
     alignItems: 'flex-end',
     pointerEvents: 'none',
   }),
-  bar: ({  i }: {  i: number }): React.CSSProperties => ({
-    height: '0.5em',
+  bar: ({ active, i }: { active: boolean, i: number }): React.CSSProperties => ({
+    height: active ? '100%' : '0.5em',
     width: '20%',
     transformOrigin: 'bottom',
     transition: 'all 1s',
     background: color[i],
   }),
-  header: (): React.CSSProperties => ({
+  header: (theme: {}): React.CSSProperties => ({
     position: 'relative',
     color: 'white',
     zIndex: '1',
@@ -77,7 +81,7 @@ const styles = {
   headerH2: (): React.CSSProperties => ({
     margin: '0 0 0.5em 0',
   }),
-  email: (): React.CSSProperties => ({
+  email: ({ focused }: { focused: boolean }): React.CSSProperties => ({
     position: 'relative',
     height: '2em',
     lineHeight: '2em',
@@ -90,7 +94,7 @@ const styles = {
     background: 'inherit',
     textAlign: 'inherit',
     outlineOffset: '0.15em',
-    outline:  'none',
+    outline: focused ? '2px solid #fff' : 'none',
   }),
   submit: (): React.CSSProperties => ({
     position: 'absolute',
@@ -114,3 +118,36 @@ const styles = {
   }),
 }
 
+function countEmailParts(email: string) {
+  if (/@.+\..{2,}$/.test(email)) {
+    return 5
+  } else if (/@.+\..?$/.test(email)) {
+    return 4
+  } else if (/@.+$/.test(email)) {
+    return 3
+  } else if (/@/.test(email)) {
+    return 2
+  } else if (/.+/.test(email)) {
+    return 1
+  } else {
+    return 0
+  }
+}
+
+function useWindowDimensions() {
+  const [windowDimensions, setWindowDimensions] = React.useState<{ width: number }>({ width: window.innerWidth });
+
+  function handleResize() {
+    setWindowDimensions({ width: window.innerWidth });
+  }
+
+  React.useEffect(() => {
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    }
+  })
+
+  return windowDimensions;
+
+}
