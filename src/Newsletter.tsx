@@ -1,22 +1,21 @@
 
 import React from 'react'
-import { ThemeContext } from './ThemeContext';
 
 function Newsletter() {
   const [email, setEmail] = React.useState<string>('')
   const [emailFocused, setEmailFocused] = React.useState<boolean>(false);
   const { width } = useWindowDimensions();
   const emailPartsCount = countEmailParts(email)
-  const { theme } = React.useContext(ThemeContext);
+  const [submitHovered, setSubmitHovered] = React.useState<boolean>(false)
 
   return (
     <section style={styles.container(width)}>
       <div style={styles.spectrum()} aria-hidden>
-        {Array.from(Array(5)).map((_, i) => (
+        {colors.map((_, i) => (
           <div style={styles.bar({ active: i + 1 <= emailPartsCount, i })} key={i}></div>
         ))}
       </div>
-      <header style={styles.header({ theme })}>
+      <header style={styles.header()}>
         <h2 style={styles.headerH2()}>Get the newsletter</h2>
       </header>
       <input
@@ -28,14 +27,25 @@ function Newsletter() {
         onFocus={() => setEmailFocused(true)}
         onBlur={() => setEmailFocused(false)}
       />
-      <button style={styles.submit()}>Sign up</button>
+      <button
+        style={styles.submit({
+          active: emailPartsCount >= 5,
+          hovered: submitHovered
+        })}
+        onFocus={() => setSubmitHovered(true)}
+        onBlur={() => setSubmitHovered(false)}
+        onMouseOver={() => setSubmitHovered(true)}
+        onMouseOut={() => setSubmitHovered(false)}
+      >
+        Sign up
+      </button>
     </section>
   )
 }
 
 export default Newsletter
 
-const color = [
+const colors = [
   '#ff598a',
   '#de56e8',
   '#b36bff',
@@ -68,9 +78,9 @@ const styles = {
     width: '20%',
     transformOrigin: 'bottom',
     transition: 'all 1s',
-    background: color[i],
+    background: colors[i],
   }),
-  header: (theme: {}): React.CSSProperties => ({
+  header: (): React.CSSProperties => ({
     position: 'relative',
     color: 'white',
     zIndex: '1',
@@ -96,26 +106,37 @@ const styles = {
     outlineOffset: '0.15em',
     outline: focused ? '2px solid #fff' : 'none',
   }),
-  submit: (): React.CSSProperties => ({
+  submit: ({ active, hovered }: { active: boolean, hovered: boolean }): React.CSSProperties => ({
     position: 'absolute',
     left: '50%',
+    transform: hovered
+      ? 'translate(-50%, 50%) rotate(0deg) scale(1.2)'
+      : active
+        ? 'translate(-50%, 50%) rotate(-5deg)'
+        : 'translateX(-50%) rotate(0deg)',
     bottom: '0',
+    height: active ? 'auto' : '0',
+    width: active ? 'auto' : '0',
     overflow: 'hidden',
-    padding: '0',
+    padding: active ? '0.25em 1em' : '0',
     margin: '0',
-    background: 'transparent',
+    background: active ? '#fff' : 'transparent',
     border: '0',
-    borderBottom: 0,
+    borderBottom: hovered
+      ? `3px solid ${colors[0]}`
+      : active
+        ? `3px solid ${colors[5]}`
+        : 0,
     textTransform: 'uppercase',
     transition: 'all 300ms',
-    fontSize: '0',
+    fontSize: active ? '1em' : '0',
     zIndex: '1',
     color: '#070222',
     fontWeight: 'bold',
     cursor: 'pointer',
     outlineOffset: '4px',
-    outline: 'none',
-  }),
+    outline: hovered ? '2px solid #fff' : 'none'
+  })
 }
 
 function countEmailParts(email: string) {
